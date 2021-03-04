@@ -7,6 +7,9 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField
 from wtforms import SubmitField, MultipleFileField
 from upload_data import main
+import socket
+from waitress import serve
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd79cddc52783fe71bcbee0deb14061d0'
@@ -23,7 +26,8 @@ def index():
     form = FileUploadForm()
     if form.validate_on_submit():
         for file in form.file.data:
-            filename = secure_filename(file.filename)
+            current_time = datetime.now()
+            filename = socket.gethostname()+"_"+current_time.strftime('%m-%d-%Y')+"_"+secure_filename(file.filename)
             if filename != '':
                 file.save(os.path.join(app.config['UPLOAD_PATH'], filename))
         main()
@@ -38,4 +42,5 @@ def upload(filename):
     return send_from_directory(app.config['RESULTS_PATH'], filename)
 
 if __name__=='__main__':
-    app.run(debug=True)
+    #app.run(debug=True)
+    serve(app, host="0.0.0.0", port=5000)
