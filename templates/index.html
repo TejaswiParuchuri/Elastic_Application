@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Elastic Applcaition</title>
+</head>
+
+<body>
+    <h1>IAAS Elastic Application</h1>
+    <form method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <h4>Upload Image for Classification</h4><br>
+        {{ form.file }}
+        <input type="submit">
+    </form>
+    <hr>
+    <h4>Results from Classification</h4>
+    <table style="width:15%">
+        {% for file in files %}
+        <tr>
+            <td>
+                <img src="{{ url_for('upload', filename=file) }}" style="width: 64px">
+            </td>
+            <td>
+                {% if result.file %}
+                <p>{{result.file}}</p>
+                {% else %}
+                <p> Loading..</p>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>
