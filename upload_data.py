@@ -11,8 +11,8 @@ from aws_credentials import *
 REGION = "us-east-1"
 UPLOAD_PATH = 'uploads'
 RESULTS_PATH = 'results'
-INPUT_BUCKET = "input-images-cc"
-OUTPUT_BUCKET = "output-text-cc"
+INPUT_BUCKET = "cse546-input"
+OUTPUT_BUCKET = "cse546-output"
 
 
 def isTreadAlive(threads):
@@ -56,9 +56,10 @@ def uploadS3Input(myfile, bucketName, object_name=None):
             region_name=REGION
         )
 
-        # response = sqs_client.list_queues()
+        response = sqs_client.list_queues()
         # print(response['QueueUrls'][0])
-        queueUrl = 'https://queue.amazonaws.com/130782845993/RequestQueue'
+        # queueUrl = 'https://queue.amazonaws.com/130782845993/RequestQueue'
+        queueUrl = response['QueueUrls'][0]
         response = sqs_client.send_message(
             QueueUrl=queueUrl,
             DelaySeconds=2,
