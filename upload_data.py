@@ -21,6 +21,31 @@ def isTreadAlive(threads):
             return 1
     return 0
 
+def download_file(key):
+    s3 = boto3.resource('s3')
+
+    try:
+        s3.Bucket(OUTPUT_BUCKET).download_file(key, RESULTS_PATH+"/"+key)
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            print("The object does not exist.")
+        else:
+            raise
+    return 1
+
+def _key_existing_size__list(key):
+    """return the key's size if it exist, else None"""
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(OUTPUT_BUCKET)
+    objs = list(bucket.objects.filter(Prefix=key).limit(1))
+    if objs:
+        return True
+    else:
+        return False
+    # response = s3.Object(OUTPUT_BUCKET,key).exists()
+    # print(response)
+    # return response
+
 
 def createSQSMessage(image_filename, result_filename, processed):
     message = {}
@@ -120,6 +145,39 @@ def main():
     except Exception as e:
         raise e
 
+    # time.sleep(10)
+    # alreadyDownloaded = []
+    # while(len(alreadyDownloaded)!=len(uploadkeys)):
+    #     for uploadkey in uploadkeys:
+    #         if uploadkey in alreadyDownloaded:
+    #             continue
+    #         uploadkey = ".".join(uploadkey.split(".")[:-1])+".txt"
+    #         if _key_existing_size__list(uploadkey) and  download_file(uploadkey):
+    #             alreadyDownloaded.append(uploadkey)
+    
+    # results = {}
+    # for uploadkey in uploadkeys:
+    #     f = open(RESULTS_PATH+"/"+uploadkey.split(".")[0]+".txt", "r")
+    #     results[uploadkey] = str(f.read())
+    # print(results)
+
+def download(uploadkeys):
+    if not uploadkeys:
+        return
+    alreadyDownloaded = []
+    while(len(alreadyDownloaded)!=len(uploadkeys)):
+        for uploadkey in uploadkeys:
+            if uploadkey in alreadyDownloaded:
+                continue
+            uploadkey = ".".join(uploadkey.split(".")[:-1])+".txt"
+            if _key_existing_size__list(uploadkey) and  download_file(uploadkey):
+                alreadyDownloaded.append(uploadkey)
+    
+    results = {}
+    for uploadkey in uploadkeys:
+        f = open(RESULTS_PATH+"/"+uploadkey.split(".")[0]+".txt", "r")
+        results[uploadkey] = str(f.read())
+    print(results)
 
 if __name__ == '__main__':
     main()

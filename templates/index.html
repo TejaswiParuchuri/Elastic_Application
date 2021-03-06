@@ -22,10 +22,10 @@
                 <img src="{{ url_for('upload', filename=file) }}" style="width: 64px">
             </td>
             <td>
-                {% if result.file %}
-                <p>{{result.file}}</p>
+                {% if result[file] %}
+                    <p> {{result[file]}}</p>
                 {% else %}
-                <p> Loading..</p>
+                    <p> Loading..</p>
                 {% endif %}
             </td>
         </tr>
