@@ -1,3 +1,5 @@
+We need to create a new Linux EC2 instance for the AppTier controller, create all the necessary files present this folder and then run the following commands:
+
 chmod +x test.sh <br/>
 chmod 777 stdout.txt <br/>
 pip3 install boto3 <br/>
