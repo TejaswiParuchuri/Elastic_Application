@@ -1,6 +1,6 @@
 #### Web Tier:
 #### Controller:
-#### App Tier: 
+#### AppTier: 
 App Tier is created from our own AMI which consists of the given classifier code along with the additional code to run the given classifier. <br/>
 👉As soon as the instance is created from controller from the given AMI, a cronjob will start which will execute the test.sh shell script which in turn will execute startup.py <br/>
 👉startup.py will basically check for any messages available in SQS request queue.<br/>
