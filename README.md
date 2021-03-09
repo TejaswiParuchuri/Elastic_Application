@@ -2,6 +2,10 @@
 
 This Elastic Cloud Application provides an image recognition service, which uses a deep learning model to predict the images provided by users.<br/>
 The main purpose of this project is to understand and effectively utilize cloud computing Iaas services (compute, storage and message) to meet the demand with scaling up and down the resources. We have used the most widely used resources from Amazon Web Services(AWS) i.e. Amazon Elastic Compute Cloud (EC2), Amazon Simple Storage (S3) and Amazon Simple Queue Service(SQS).<br/>
+###### S3 input bucket:  
+###### S3 output bucket:
+###### SQS request queue:
+###### SQS response queue:
 
 #### Web Tier:
 Web Tier provides a web interface to access the cloud application i.e. to provide input to the deeplearning model and views the generated results.<br/>
