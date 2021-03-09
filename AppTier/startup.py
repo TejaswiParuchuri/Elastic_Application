@@ -12,48 +12,47 @@ import sys
 import numpy as np
 import botocore
 import os
+import time
 
-INPUT_BUCKET_NAME='cse546-input'
-OUTPUT_BUCKET_NAME='cse546-output'
+INPUT_BUCKET_NAME='cse546-input-p1' #input s3 bucket to download images for classifier
+OUTPUT_BUCKET_NAME='cse546-output-p1' #output s3 bucket to store results
 
-def job():
-    check_queue_message()
-    print("I'm working...")
+# schedule a job to check for any messages available in SQS request qeueue
+def check():
+    check_message_queue()
+    print("Checking SQS...")
 
-
-schedule.every(10).seconds.do(job)
-
-
-def check_queue_message():
-    response = receive_message()
+#check if any messages are available in request queue. If any messages are available process the messages otherwise terminate the instance
+def check_message_queue():
+    #get the available message from SQS request queue
+    response = get_message()
     if response is not None and response.body is not None:
-        print("cancelling sheduled jobs")
+        print("Message Found in SQS....")
+        #if messages are available in SQS request queue cancel the current schedule job and process the message
         schedule.CancelJob
-        print(response.body)
         process_message(response.body)
-        print("scheduling 10s")
-        schedule.every(10).seconds.do(job)
+        #once message is processed start the scheduler
+        schedule.every(10).seconds.do(check)
+    #if no message is found in SQS request queue terminate the current instnce
     else:
         print("Queue Empty")
-        #terminate_instance()
+        terminate_instance()
 
+#method to terminate the current instance
 def terminate_instance():
-    rec = subprocess.check_output(["ec2metadata", "--instance-id"], universal_newlines=True).strip()
-    print("current instance is:", rec)
+    current_instance= subprocess.check_output(["ec2metadata", "--instance-id"], universal_newlines=True).strip()
 
     client = boto3.client('ec2')
     response = client.terminate_instances(
         InstanceIds=[
-            rec
+            current_instance
         ]
     )
-    print(response)
 
-
-		
-def receive_message(name="CSE546_RequestQueue"):
+#get the message that is there in SQS request queue and then delete the message from queue		
+def get_message():
     sqs = boto3.resource('sqs')
-    queue = sqs.Queue('https://sqs.us-east-1.amazonaws.com/322990531231/CSE546_RequestQueue')
+    queue = sqs.Queue('https://sqs.us-east-1.amazonaws.com/992611621996/CSE546_RequestQueue.fifo')
     response = queue.receive_messages(
         
         AttributeNames=[
@@ -63,53 +62,69 @@ def receive_message(name="CSE546_RequestQueue"):
         VisibilityTimeout=120,
         WaitTimeSeconds=2
     )
-    print(response)
     for message in response:
         message.delete()
         return message
-		
+
+#method to process the message that is received from SQS request queue
 def process_message(body):
     message_dict = json.loads(body)
-
     if message_dict['image_filename'] is not None:
-        print(message_dict['image_filename'])
-        download_file(message_dict['image_filename'])
+        #method to download the file from s3 bucket based on the url provided in SQS message
+        download_file_from_s3(message_dict['image_filename'])
+        #mehthod to run classifier on the downloaded image from s3
         run_classifier(file=message_dict['image_filename'])
 		
-def download_file(key):
+#method to download the image from s3 input bucket based on the url provided in SQS request queue message
+def download_file_from_s3(key):
     s3 = boto3.resource('s3')
     try:
         s3.Bucket(INPUT_BUCKET_NAME).download_file(key, key)
     except botocore.exceptions.ClientError as e:
         if e.response['Error']['Code'] == "404":
-            print("The object does not exist.")
+            print("The image doesn't exist in s3.")
         else:
             raise
-		
+
+#method to execute the provided classifier on the downloaded image and save the result to stdout.txt and push the result to SQS Response queue
 def run_classifier(file):
     if file is not None:
         os.system("python3 ~/classifier/image_classification.py "+file+" > stdout.txt")
         if os.path.exists(file):
            os.remove(file)
+        message=create_SQS_message(file,'stdout.txt')
+        sqs=boto3.resource('sqs')
+        queue=sqs.Queue('https://sqs.us-east-1.amazonaws.com/992611621996/CSE546_ResponseQueue.fifo')
+        response=queue.send_message(
+                MessageBody=message,
+                MessageGroupId='CSE546Project')
         upload_result(file,'stdout.txt')
-		
+
+#method to create message that has to be sent to SQS Response queue. Message is json with image file name and result
+def create_SQS_message(file,resultfile):
+    file_data=open(resultfile,"r")
+    result=file_data.readline()
+    file_data.close()
+    message={}
+    message['image_filename']=file
+    message['result']=result
+    return json.dumps(message)
+
+#method to upload the result to s3 output bucket
 def upload_result(key,result):
     s3 = boto3.resource('s3')
     try:
-        #createFile("stdout.txt", result)
         name=key.split('.')[:-1]
-        s3.Bucket(OUTPUT_BUCKET_NAME).upload_file(result,"".join(name)+".txt")
+        s3.Bucket(OUTPUT_BUCKET_NAME).upload_file(result,".".join(name)+".txt")
     except botocore.exceptions.ClientError as e:
         if e.response['Error']['Code'] == "404":
-            print("The object does not exist.")
+            print("The text does not exist in s3.")
         else:
             raise
 
-'''def createFile(file,result):
-	with open(file, 'w') as filetowrite:
-		filetowrite.write(result)'''
+schedule.every(10).seconds.do(check)
 		
-		
+#run until the server is terminated
 while True:
     schedule.run_pending()
     time.sleep(10)
