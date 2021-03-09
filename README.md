@@ -1,3 +1,8 @@
+#### Team Members:
+    Gunda Akshay Kumar (1217179379)
+    Kusuma Kumari Vanteru
+    Tejaswi Paruchuri (1213268054)
+
 ### Elastic Cloud Application
 
 This Elastic Cloud Application provides an image recognition service, which uses a deep learning model to predict the images provided by users.<br/>
