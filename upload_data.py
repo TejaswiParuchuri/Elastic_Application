@@ -49,6 +49,22 @@ def _key_existing_size__list(key):
     # print(response)
     # return response
 
+def receive_message(name="CSE546_ResponseQueue"):
+    sqs = boto3.resource('sqs')
+    queue = sqs.Queue('https://sqs.us-east-1.amazonaws.com/992611621996/CSE546_ResponseQueue.fifo')
+    response = queue.receive_messages(
+        
+        AttributeNames=[
+            'All'
+        ],
+        MaxNumberOfMessages=1,
+        VisibilityTimeout=120,
+        WaitTimeSeconds=2
+    )
+    print("64: ",response)
+    for message in response:
+        message.delete()
+        return message
 
 def createSQSMessage(image_filename, result_filename, processed):
     message = {}
@@ -121,6 +137,16 @@ class ProgressPercentage(object):
                 percentage))
         sys.stdout.flush()
 
+def getResponseQueueMessageCount(name="CSE546_ResponseQueue.fifo"):
+    sqs = boto3.resource('sqs')
+
+    response = sqs.get_queue_by_name(QueueName='CSE546_ResponseQueue.fifo')
+    print(response.url)
+    print("VisibilityTimeout: ", response.attributes.get('VisibilityTimeout'))
+    print("ApproximateNumberOfMessages: ", response.attributes.get('ApproximateNumberOfMessages'))
+    print("ApproximateNumberOfMessagesNotVisible: ", response.attributes.get('ApproximateNumberOfMessagesNotVisible'))
+    print("148: ",response)
+    return int(response.attributes.get('ApproximateNumberOfMessages'))
 
 def main():
     try:
@@ -147,42 +173,73 @@ def main():
         print(" All S3 uploads are done. Time taken : " + str(end_time-start_time))
     except Exception as e:
         raise e
+    print("Waiting 10 sec")
+    time.sleep(10)
+    print("started again")
+    alreadyDownloaded = {}
+    print("180: ",uploadkeys)
+    while(len(alreadyDownloaded.keys())<len(uploadkeys)):
+        while getResponseQueueMessageCount()>0:
+            response = receive_message()
+            print("184: ",response)
+            if response is not None:
+                print("186: ",response.body)
+                message = json.loads(response.body)
+                print("188: ",message)
+                if message['image_filename'] is not None and message["image_filename"] in uploadkeys:
+                    print("190: Recieving Message : ",message)
+                    alreadyDownloaded[message["image_filename"]] = message["result"]
+        print("192: ", alreadyDownloaded)
+        time.sleep(2)
 
-    # time.sleep(10)
-    # alreadyDownloaded = []
-    # while(len(alreadyDownloaded)!=len(uploadkeys)):
-    #     for uploadkey in uploadkeys:
-    #         if uploadkey in alreadyDownloaded:
-    #             continue
-    #         uploadkey = ".".join(uploadkey.split(".")[:-1])+".txt"
-    #         if _key_existing_size__list(uploadkey) and  download_file(uploadkey):
-    #             alreadyDownloaded.append(uploadkey)
-    
     # results = {}
     # for uploadkey in uploadkeys:
     #     f = open(RESULTS_PATH+"/"+uploadkey.split(".")[0]+".txt", "r")
     #     results[uploadkey] = str(f.read())
-    # print(results)
+    print("199 : ",alreadyDownloaded)
+    return alreadyDownloaded
 
 def download(uploadkeys):
-    if not uploadkeys:
-        return
-    alreadyDownloaded = []
-    while(len(alreadyDownloaded)!=len(uploadkeys)):
-        print(len(alreadyDownloaded)," ",len(uploadkeys)," :", len(alreadyDownloaded)!=len(uploadkeys))
-        for uploadkey in uploadkeys:
-            if uploadkey in alreadyDownloaded:
-                continue
-            uploadkey = ".".join(uploadkey.split(".")[:-1])+".txt"
-            if _key_existing_size__list(uploadkey) and  download_file(uploadkey):
-                alreadyDownloaded.append(uploadkey)
+    print(uploadkeys)
+    while(len(alreadyDownloaded.keys())>=len(uploadkeys)):
+       while getResponseQueueMessageCount()>0:
+            response = receive_message()
+            print("182: ",response)
+            if response is not None:
+                print("183: ",response.body)
+                message = json.loads(response.body)
+                print("185: ",message)
+                if message['image_filename'] is not None and message["image_filename"] in uploadkeys:
+                    print("186: Recieving Message : ",message)
+                    alreadyDownloaded[message["image_filename"]] = message["result"]
+            time.sleep(1)
+
+    # results = {}
+    # for uploadkey in uploadkeys:
+    #     f = open(RESULTS_PATH+"/"+uploadkey.split(".")[0]+".txt", "r")
+    #     results[uploadkey] = str(f.read())
+    print(alreadyDownloaded)
+    return alreadyDownloaded
+
+# def download(uploadkeys):
+#     if not uploadkeys:
+#         return
+#     alreadyDownloaded = []
+#     while(len(alreadyDownloaded)!=len(uploadkeys)):
+#         print(len(alreadyDownloaded)," ",len(uploadkeys)," :", len(alreadyDownloaded)!=len(uploadkeys))
+#         for uploadkey in uploadkeys:
+#             if uploadkey in alreadyDownloaded:
+#                 continue
+#             uploadkey = ".".join(uploadkey.split(".")[:-1])+".txt"
+#             if _key_existing_size__list(uploadkey) and  download_file(uploadkey):
+#                 alreadyDownloaded.append(uploadkey)
     
-    results = {}
-    for uploadkey in uploadkeys:
-        f = open(RESULTS_PATH+"/"+uploadkey.split(".")[0]+".txt", "r")
-        results[uploadkey] = str(f.read())
-    print(results)
-    return redirect(url_for('index'))
+#     results = {}
+#     for uploadkey in uploadkeys:
+#         f = open(RESULTS_PATH+"/"+uploadkey.split(".")[0]+".txt", "r")
+#         results[uploadkey] = str(f.read())
+#     print(results)
+#     return redirect(url_for('index'))
 
 if __name__ == '__main__':
     main()

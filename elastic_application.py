@@ -1,5 +1,6 @@
 import imghdr
 import os
+import time
 from flask import Flask, render_template, request, redirect, url_for, abort, \
     send_from_directory
 from werkzeug.utils import secure_filename
@@ -25,42 +26,50 @@ class FileUploadForm(FlaskForm):
 def index():
     form = FileUploadForm()
     if form.validate_on_submit():
+        start_time = time.time()
         files = os.listdir(app.config['RESULTS_PATH'])
         result = {}
         for file in files:
             os.remove(app.config["RESULTS_PATH"]+"/"+file)
+        files = []
         for file in form.file.data:
             current_time = datetime.now()
-            filename = socket.gethostname()+"_"+current_time.strftime('%m-%d-%Y')+"_"+secure_filename(file.filename)
+            filename = str(time.time())+"_"+current_time.strftime('%m-%d-%Y')+"_"+secure_filename(file.filename)
             if filename != '':
                 file.save(os.path.join(app.config['UPLOAD_PATH'], filename))
-        main()
-        return redirect(url_for('index'))
+                files.append(filename)
+        result = main()
+        end_time = time.time()
+        print("Total Process done. Time taken : " + str(end_time-start_time))
+        return render_template('index.html', files=files, form = form, result = result)
 
     files = os.listdir(app.config['RESULTS_PATH'])
-    result = {}
-    uploadKeys = []
-    textFiles = []
-    for file in files:
-        if ".txt" in file:
-            print("Exists  "+ file)
-            textFiles.append(file)
+    # result = {}
+    # uploadKeys = []
+    # # textFiles = []
+    # for file in files:
+    #     uploadKeys.append(file)
 
-    for file in textFiles:
-        files.remove(file)
+    # #     if ".txt" in file:
+    # #         print("Exists  "+ file)
+    # #         textFiles.append(file)
 
-    for file in files:
-        new_file = file.split(".")[0]+".txt"
-        if new_file not in textFiles :
-            uploadKeys.append(file)
-        print(os.path.exists(app.config['RESULTS_PATH']+"/"+new_file))
-        if socket.gethostname() in file and os.path.exists(app.config['RESULTS_PATH']+"/"+new_file):
-            f = open(app.config['RESULTS_PATH']+"/"+new_file)
-            result[file] = str(f.read())
-        print(result)
-    print("Upload Keys : " , uploadKeys)
-    print("Files to Front End : " , files)
-    download(uploadKeys)
+    # # for file in textFiles:
+    # #     files.remove(file)
+
+    # # for file in files:
+    # #     new_file = file.split(".")[0]+".txt"
+    # #     if new_file not in textFiles :
+    # #         uploadKeys.append(file)
+    # #     print(os.path.exists(app.config['RESULTS_PATH']+"/"+new_file))
+    # #     if socket.gethostname() in file and os.path.exists(app.config['RESULTS_PATH']+"/"+new_file):
+    # #         f = open(app.config['RESULTS_PATH']+"/"+new_file)
+    # #         result[file] = str(f.read())
+    # #     print(result)
+    # # print("Upload Keys : " , uploadKeys)
+    # # print("Files to Front End : " , files)
+    result={}
+    # result = download(uploadKeys)
     return render_template('index.html', files=files, form = form, result = result)
 
 @app.route('/uploads/<filename>')
