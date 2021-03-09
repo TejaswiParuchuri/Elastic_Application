@@ -7,12 +7,15 @@ import json
 import threading
 from botocore.exceptions import ClientError
 from aws_credentials import *
+from flask import Flask, render_template, request, redirect, url_for
+import socket
+import logging
 
 REGION = "us-east-1"
 UPLOAD_PATH = 'uploads'
 RESULTS_PATH = 'results'
-INPUT_BUCKET = "cse546-input"
-OUTPUT_BUCKET = "cse546-output"
+INPUT_BUCKET = "cse546-input-p1"
+OUTPUT_BUCKET = "cse546-output-p1"
 
 
 def isTreadAlive(threads):
@@ -71,7 +74,7 @@ def uploadS3Input(myfile, bucketName, object_name=None):
         message = {}
         response = s3_client.upload_file(UPLOAD_PATH+"/"+myfile, bucketName,
                                          object_name, Callback=ProgressPercentage(UPLOAD_PATH+"/"+myfile))
-        print(" Uploading video file : " + str(myfile) + " : " + str(response))
+        print(" Uploading image file : " + str(myfile) + " : " + str(response))
         message = createSQSMessage(
             myfile, "noresultfile", False)
         sqs_client = boto3.client(
@@ -80,15 +83,15 @@ def uploadS3Input(myfile, bucketName, object_name=None):
             aws_secret_access_key=aws_secret_access_key,
             region_name=REGION
         )
-
+        print(socket.gethostname())
         response = sqs_client.list_queues()
-        # print(response['QueueUrls'][0])
-        # queueUrl = 'https://queue.amazonaws.com/130782845993/RequestQueue'
-        queueUrl = response['QueueUrls'][0]
+        print(response['QueueUrls'][0])
+        queueUrl = 'https://sqs.us-east-1.amazonaws.com/992611621996/CSE546_RequestQueue.fifo'
+        # queueUrl = response['QueueUrls'][0]
         response = sqs_client.send_message(
             QueueUrl=queueUrl,
-            DelaySeconds=2,
-            MessageBody=message
+            MessageBody=message,
+            MessageGroupId=str(socket.gethostname())
         )
         print("Message has been sent to queue : " +
               str(queueUrl) + " : " + str(response['MessageId']))
@@ -166,6 +169,7 @@ def download(uploadkeys):
         return
     alreadyDownloaded = []
     while(len(alreadyDownloaded)!=len(uploadkeys)):
+        print(len(alreadyDownloaded)," ",len(uploadkeys)," :", len(alreadyDownloaded)!=len(uploadkeys))
         for uploadkey in uploadkeys:
             if uploadkey in alreadyDownloaded:
                 continue
@@ -178,6 +182,7 @@ def download(uploadkeys):
         f = open(RESULTS_PATH+"/"+uploadkey.split(".")[0]+".txt", "r")
         results[uploadkey] = str(f.read())
     print(results)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     main()

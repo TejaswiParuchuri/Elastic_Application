@@ -5,6 +5,12 @@
     <title>Elastic Applcaition</title>
 </head>
 
+<script>
+    setTimeout(function() {
+  location.reload();
+}, 10000);
+</script>
+
 <body>
     <h1>IAAS Elastic Application</h1>
     <form method="post" enctype="multipart/form-data">
@@ -18,6 +24,9 @@
     <table style="width:15%">
         {% for file in files %}
         <tr>
+            <td>
+                {{file}}
+            </td>
             <td>
                 <img src="{{ url_for('upload', filename=file) }}" style="width: 64px">
             </td>
