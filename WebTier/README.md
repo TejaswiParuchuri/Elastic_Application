@@ -8,4 +8,4 @@ Start the Flask Application, upload images by accessing the application from a w
 ```
 python elastic_application.py
 ```
-* 👉 It runs the application on 5000 port which can be accessed using localhost:5000 if running on the local machine, and on an EC2 instance using <IPV4 DNS>:5000 or <IPV4 Address>:5000<br>
+* 👉 It runs the application on 5000 port which can be accessed using localhost:5000 if running on the local machine, and on an EC2 instance using &lt;IPV4 DNS&gt;:5000 or &lt;IPV4 Address&gt;:5000<br>
