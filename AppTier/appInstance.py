@@ -28,7 +28,7 @@ def check_message_queue():
     #if no message is found in SQS request queue terminate the current instnce
     else:
         print("Queue Empty")
-        #terminate_instance()
+        terminate_instance()
 
 #method to terminate the current instance
 def terminate_instance():
