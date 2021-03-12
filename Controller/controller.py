@@ -3,7 +3,6 @@ import time
 import boto3
 import threading
 
-
 def isTreadAlive(threads):
     for t in threads:
         if t.is_alive():
@@ -15,26 +14,6 @@ def controller_job():
     print("Controller job - Checking request queue has started...")
     check_request_queue()
 
-def get_instance_id(state='stopped'):
-    instances = boto3.resource('ec2').instances.filter(
-        Filters=[{'Name': 'instance-state-name', 'Values': [state]}])
-    result = []
-    for instance in instances:
-        print(instance.id, instance.instance_type)
-        result.append(instance.id)
-    return result
-
-def start_instance(instance_ids):
-    for instance_id in instance_ids:
-        client = boto3.client('ec2')
-        response = client.start_instances(
-            InstanceIds=[
-                instance_id
-            ]
-        )
-        #print(response)
-    return len(instance_ids)
-
 def check_request_queue():
     #get all the messages in the Request SQS Queue
     sqs = boto3.resource('sqs')
@@ -43,16 +22,14 @@ def check_request_queue():
     #Check request SQS queue to start app instances accordingly
     num_messages = int(response.attributes.get('ApproximateNumberOfMessages'))
     if num_messages > 0:
-        #started_instances = start_instance(get_instance_id())
         schedule.CancelJob
         num_instances = num_messages
         print("initial no of instances to start: ", num_instances)
         if num_instances > 18:
             num_instances = 18
-            print("no of instances were greater that 17, so made them equal to 17")
+            print("no of instances were greater that 18, so made them equal to 18")
         print("new no of instances to start: ", num_instances)
         create_new_running_instances(number=num_instances)
-        #time.sleep(20)
     else:
         global instance_number_name
         instance_number_name=0
@@ -71,11 +48,11 @@ def create_AppTier(instance_name):
                         {
                             'ResourceType': 'instance',
                             'Tags': [
-                                    {               
+                                    {
                                         'Key': 'Name',
                                         'Value': instance_name
                                     },
-                                    ]               
+                                    ]
                         },
                     ]
                 )
@@ -88,16 +65,16 @@ def create_new_running_instances(number=1):
     count=0
     for active_instance in active_instances:
         count+=1
-    max_num_instances = 17 #as already 3 instances for controller,webtier and app controller are already there in running or stopped state
+    max_num_instances = 17 #as already 3 instances for controller, webtier and app-tier0 are already there in running  state
     num_instances_to_start=number+2 #2 is added to number as already 2 instances for controller,webtier are in running state
     print("number of running or pending instances : ",count)
-	
+
     if count > 0:
         num_instances_to_start = max(0,num_instances_to_start - count)
-		
-    num_instances_to_start = min(max_num_instances, num_instances_to_start ) 
+
+    num_instances_to_start = min(max_num_instances, num_instances_to_start )
     print("Final instances to start : ", num_instances_to_start)
-    #start the instances
+    #start the instances using threads for better efficiency
     createThreads = []
     if num_instances_to_start > 0:
         for i in range(0,num_instances_to_start):
@@ -108,16 +85,15 @@ def create_new_running_instances(number=1):
             tthread.start()
             createThreads.append(tthread)
             time.sleep(0.05)
-            
+
     while(isTreadAlive(createThreads)):
             continue
 
-
-
-#the controller job runs every 20 seconds
+#the controller job runs every 10 seconds
 schedule.every(10).seconds.do(controller_job)
 instance_number_name=0
 
 while True:
     schedule.run_pending()
     time.sleep(10)
+
