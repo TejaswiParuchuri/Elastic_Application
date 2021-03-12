@@ -23,8 +23,8 @@ Web Tier provides a web interface to access the cloud application i.e. to provid
 👉 It runs for every 20 seconds to read if any new requests have been recieved, and also considers the running/pending EC2 instances which have already been instantiated before scaling up the resources.<br/>
 #### AppTier: 
 App Tier is created from our own AMI which consists of the given classifier code along with the additional code to run the given classifier. <br/>
-👉As soon as the instance is created from controller from the given AMI, a cronjob will start which will execute the test.sh shell script which in turn will execute startup.py <br/>
-👉startup.py will basically check for any messages available in SQS request queue.<br/>
+👉As soon as the instance is created from controller from the given AMI, a cronjob will start which will execute appInstance.py <br/>
+👉appInstance.py will basically check for any messages available in SQS request queue.<br/>
 👉If any messages are available in SQS request queue, the images will be downloaded from s3 bucket and passed to classifier and the result will be stored in s3 bucket and pushed to SQS response queue and further checks for any avaialble messages in SQS request queue <br/>
 👉If no messages are available the instance will be terminated.
         
