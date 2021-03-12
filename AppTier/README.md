@@ -6,5 +6,5 @@ pip3 install schedule <br/>
 mkdir .aws <br/>
 add files config and credentials <br/>
 sudo crontab -u ubuntu -e <br/>
-@reboot sleep(30); /home/ubuntu/appInstance.py <br/>
+@reboot sleep(30); python3 /home/ubuntu/appInstance.py <br/>
 
