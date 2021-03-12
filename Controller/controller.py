@@ -6,14 +6,34 @@ import threading
 
 def isTreadAlive(threads):
     for t in threads:
-        if t.isAlive():
+        if t.is_alive():
             return 1
     return 0
 
 #job related to controller for spinning up app-tier instances
 def controller_job():
-    check_request_queue()
     print("Controller job - Checking request queue has started...")
+    check_request_queue()
+
+def get_instance_id(state='stopped'):
+    instances = boto3.resource('ec2').instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': [state]}])
+    result = []
+    for instance in instances:
+        print(instance.id, instance.instance_type)
+        result.append(instance.id)
+    return result
+
+def start_instance(instance_ids):
+    for instance_id in instance_ids:
+        client = boto3.client('ec2')
+        response = client.start_instances(
+            InstanceIds=[
+                instance_id
+            ]
+        )
+        #print(response)
+    return len(instance_ids)
 
 def check_request_queue():
     #get all the messages in the Request SQS Queue
@@ -23,25 +43,26 @@ def check_request_queue():
     #Check request SQS queue to start app instances accordingly
     num_messages = int(response.attributes.get('ApproximateNumberOfMessages'))
     if num_messages > 0:
+        #started_instances = start_instance(get_instance_id())
         schedule.CancelJob
         num_instances = num_messages
         print("initial no of instances to start: ", num_instances)
-        if num_instances > 17:
-            num_instances = 17
+        if num_instances > 18:
+            num_instances = 18
             print("no of instances were greater that 17, so made them equal to 17")
         print("new no of instances to start: ", num_instances)
         create_new_running_instances(number=num_instances)
-        time.sleep(20)
+        #time.sleep(20)
     else:
         global instance_number_name
         instance_number_name=0
         print("no of messages are less than or equal to 0")
     print("Controller job - Checking request queue has ended")
 
-def create_instance(instance_name):
+def create_AppTier(instance_name):
     ec2 = boto3.resource('ec2')
     instances = ec2.create_instances(
-                    ImageId='ami-07e50df3335210dbc',
+                    ImageId='ami-0dfd759a7f380119e',
                     MinCount=1,
                     MaxCount=1,
                     InstanceType='t2.micro',
@@ -72,7 +93,7 @@ def create_new_running_instances(number=1):
     print("number of running or pending instances : ",count)
 	
     if count > 0:
-        num_instances_to_start = num_instances_to_start - count
+        num_instances_to_start = max(0,num_instances_to_start - count)
 		
     num_instances_to_start = min(max_num_instances, num_instances_to_start ) 
     print("Final instances to start : ", num_instances_to_start)
@@ -83,7 +104,7 @@ def create_new_running_instances(number=1):
             global instance_number_name
             instance_number_name+=1
             tthread = threading.Thread(
-                target=create_instance, args=('AppTier'+str(instance_number_name)))
+                target=create_AppTier, args=(('AppTier'+str(instance_number_name),)))
             tthread.start()
             createThreads.append(tthread)
             time.sleep(0.05)
@@ -94,9 +115,9 @@ def create_new_running_instances(number=1):
 
 
 #the controller job runs every 20 seconds
-schedule.every(20).seconds.do(controller_job)
+schedule.every(10).seconds.do(controller_job)
 instance_number_name=0
 
 while True:
     schedule.run_pending()
-    time.sleep(20)
+    time.sleep(10)

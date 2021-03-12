@@ -190,7 +190,8 @@ def main():
                 if message['image_filename'] is not None and message["image_filename"] in uploadkeys:
                     print("190: Recieving Message : ",message)
                     alreadyDownloaded[message["image_filename"]] = message["result"]
-        print("192: ", alreadyDownloaded)
+        #print("192: ", alreadyDownloaded)
+        print("Messages received till now: ",len(alreadyDownloaded))
         time.sleep(2)
 
     # results = {}
