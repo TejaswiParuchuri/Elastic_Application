@@ -23,8 +23,8 @@ Web Tier provides a web interface to access the cloud application i.e. to provid
 👉 The web tier waits until any response is generated in the response sqs queue.<br/>
 👉 Once, responses are genearted the web tier will retrieve the predicted results for each image and then displays it to the user.<br/>
 #### Controller:
-👉 The controller reads the number of messages from the Request message queue and scales up the number of compute resources based on the demand.<br/>
-👉 The controller job runs for every 10 seconds to read if any new requests have been recieved, and also considers the running/pending EC2 instances which have already been instantiated before scaling up the resources.<br/>
+👉 The controller reads the number of messages from the Request SQS queue every 10 seconds and scales up the number of compute resources based on the demand. Here, we have made sure that the number of EC2 instances running at any point of time does not exceed 20, as per the requirements.<br/>
+👉 The controller job runs for every 10 seconds to read if any new requests have been recieved, and also considers the running/pending EC2 instances which have already been instantiated before scaling up the resources. We create the App-Tier instances one by one, with the appropriate names using Threads for faster instance creation and efficiency.<br/>
 #### AppTier: 
 App Tier is created from our own AMI which consists of the given classifier code along with the additional code to run the given classifier. <br/>
 👉As soon as the instance is created from controller from the given AMI, a cronjob will start which will execute appInstance.py <br/>
