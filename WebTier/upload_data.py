@@ -166,7 +166,8 @@ def main():
             continue
 
         for uploadkey in uploadkeys:
-            shutil.move(UPLOAD_PATH+"/"+uploadkey, RESULTS_PATH+"/"+uploadkey)
+            uploadkey1 = uploadkey.split("2021_")[-1]
+            shutil.move(UPLOAD_PATH+"/"+uploadkey, RESULTS_PATH+"/"+uploadkey1)
             # os.remove(UPLOAD_PATH+"/"+uploadkey)
 
         end_time = time.time()

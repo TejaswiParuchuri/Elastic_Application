@@ -35,15 +35,25 @@ def index():
         for file in form.file.data:
             current_time = datetime.now()
             filename = str(time.time())+"_"+current_time.strftime('%m-%d-%Y')+"_"+secure_filename(file.filename)
+            #filename = secure_filename(file.filename)
             if filename != '':
                 file.save(os.path.join(app.config['UPLOAD_PATH'], filename))
                 files.append(filename)
         result = main()
         end_time = time.time()
         print("Total Process done. Time taken : " + str(end_time-start_time))
+        files1 = []
+        result1 = {}
+        for file in files:
+            file1 = file.split("2021_")[-1]
+            files1.append(file1)
+            result1[file1] = result[file]
+        files = files1
+        result = result1
         return render_template('index.html', files=files, form = form, result = result)
 
-    files = os.listdir(app.config['RESULTS_PATH'])
+    # files = os.listdir(app.config['RESULTS_PATH'])
+    files = []
     # result = {}
     # uploadKeys = []
     # # textFiles = []
@@ -77,5 +87,6 @@ def upload(filename):
     return send_from_directory(app.config['RESULTS_PATH'], filename)
 
 if __name__=='__main__':
+    print("Web Tier has Started...")
     # app.run(debug=True)
     serve(app, host="0.0.0.0", port=5000)
