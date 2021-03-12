@@ -12,6 +12,7 @@ The main purpose of this project is to understand and effectively utilize cloud 
     S3 output bucket:  cse546-output-p1
     SQS request queue: CSE546_RequestQueue.fifo
     SQS response queue:CSE546_ResponseQueue.fifo
+    Elatic IP Address:  34.236.13.196:5000
 
 #### Web Tier:
 Web Tier provides a web interface to access the cloud application i.e. to provide input to the deeplearning model and views the generated results.<br/>
