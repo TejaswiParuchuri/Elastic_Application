@@ -1,5 +1,6 @@
 We need to create a new Linux EC2 instance for the AppTier controller using DeepLearning AMI, create all the necessary files present in this folder and then run the following commands:
 
+chmod +x appInstance.py <br/>
 chmod 777 classification_result.txt <br/>
 pip3 install boto3 <br/>
 pip3 install schedule <br/>
