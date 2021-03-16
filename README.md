@@ -32,9 +32,5 @@ App Tier is created from our own AMI which consists of the given classifier code
 👉If any messages are available in SQS request queue, the images will be downloaded from s3 bucket and passed to classifier and the result will be stored in s3 bucket and pushed to SQS response queue and further checks for any avaialble messages in SQS request queue <br/>
 👉If no messages are available the instance will be terminated.
 
-##### IAM profile for grading purpose
-    URL:https://992611621996.signin.aws.amazon.com/console
-    Password: cse546_project1
-    Access Key: AKIA6OHCDLRWAEX4V4N4
-    Secret Access Key: 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
+
         

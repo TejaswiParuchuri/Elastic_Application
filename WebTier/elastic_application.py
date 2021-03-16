@@ -13,7 +13,7 @@ from waitress import serve
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'd79cddc52783fe71bcbee0deb14061d0'
+app.config['SECRET_KEY'] = ''
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
 app.config['UPLOAD_PATH'] = 'uploads'
 app.config['RESULTS_PATH'] = 'results'
